@@ -1,0 +1,49 @@
+[gd_scene load_steps=5 format=3]
+
+[ext_resource type="Script" path="res://scripts/vehicles/trailer.gd" id="1_trailer"]
+
+[sub_resource type="BoxShape3D" id="TrailerCollision"]
+size = Vector3(2.6, 1.2, 8.0)
+
+[sub_resource type="BoxMesh" id="TrailerBody"]
+size = Vector3(2.6, 1.2, 8.0)
+
+[sub_resource type="CylinderMesh" id="TrailerWheel"]
+top_radius = 0.48
+bottom_radius = 0.48
+height = 0.28
+radial_segments = 20
+
+[node name="Trailer" type="RigidBody3D"]
+mass = 4000.0
+script = ExtResource("1_trailer")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="."]
+position = Vector3(0, 1.4, 0)
+shape = SubResource("TrailerCollision")
+
+[node name="Body" type="MeshInstance3D" parent="."]
+position = Vector3(0, 1.4, 0)
+mesh = SubResource("TrailerBody")
+
+[node name="Wheels" type="Node3D" parent="."]
+
+[node name="LeftFrontWheel" type="MeshInstance3D" parent="Wheels"]
+position = Vector3(-1.35, 0.65, -2.5)
+rotation = Vector3(0, 0, 1.5708)
+mesh = SubResource("TrailerWheel")
+
+[node name="RightFrontWheel" type="MeshInstance3D" parent="Wheels"]
+position = Vector3(1.35, 0.65, -2.5)
+rotation = Vector3(0, 0, 1.5708)
+mesh = SubResource("TrailerWheel")
+
+[node name="LeftRearWheel" type="MeshInstance3D" parent="Wheels"]
+position = Vector3(-1.35, 0.65, 2.5)
+rotation = Vector3(0, 0, 1.5708)
+mesh = SubResource("TrailerWheel")
+
+[node name="RightRearWheel" type="MeshInstance3D" parent="Wheels"]
+position = Vector3(1.35, 0.65, 2.5)
+rotation = Vector3(0, 0, 1.5708)
+mesh = SubResource("TrailerWheel")
