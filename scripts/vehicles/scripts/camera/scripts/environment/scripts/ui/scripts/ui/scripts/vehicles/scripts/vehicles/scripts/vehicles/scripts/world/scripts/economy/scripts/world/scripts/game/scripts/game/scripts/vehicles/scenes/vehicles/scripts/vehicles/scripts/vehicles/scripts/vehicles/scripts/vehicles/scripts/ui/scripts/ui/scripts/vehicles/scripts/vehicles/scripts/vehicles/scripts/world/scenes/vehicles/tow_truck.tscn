@@ -1,0 +1,34 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/vehicles/tow_truck_controller.gd" id="1"]
+
+[node name="TowTruck" type="Node3D"]
+script = ExtResource("1")
+
+[node name="Model" type="Node3D" parent="."]
+
+[node name="Chassis" type="MeshInstance3D" parent="Model"]
+position = Vector3(0, 0.9, 0)
+mesh = BoxMesh.new()
+
+[node name="Cab" type="MeshInstance3D" parent="Model"]
+position = Vector3(0, 1.8, -2.1)
+mesh = BoxMesh.new()
+
+[node name="Windshield" type="MeshInstance3D" parent="Model"]
+position = Vector3(0, 2.05, -1.55)
+mesh = BoxMesh.new()
+
+[node name="TowArm" type="Node3D" parent="Model"]
+position = Vector3(0, 1.3, 2.2)
+
+[node name="Arm" type="MeshInstance3D" parent="Model/TowArm"]
+position = Vector3(0, 0.6, 0.8)
+mesh = BoxMesh.new()
+
+[node name="Beacon" type="OmniLight3D" parent="Model"]
+position = Vector3(0, 2.8, -2.1)
+light_color = Color(1, 0.55, 0.05, 1)
+light_energy = 2.0
+omni_range = 8.0
+visible = true
