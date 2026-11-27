@@ -1,3 +1,4 @@
+
 [gd_scene load_steps=10 format=3]
 
 [ext_resource type="Script" path="res://scripts/game/main.gd" id="1_main"]
@@ -50,4 +51,15 @@ script = ExtResource("4_sun")
 [node name="Mesh" type="MeshInstance3D" parent="Ground"]
 mesh = SubResource("GroundMesh")
 
-[node name="Collision" type="CollisionShape3D" parent="
+[node name="Collision" type="CollisionShape3D" parent="Ground"]
+shape = SubResource("GroundShape")
+
+[node name="Truck" parent="." instance=ExtResource("2_truck")]
+position = Vector3(0, 1, 0)
+
+[node name="Camera" type="Camera3D" parent="."]
+position = Vector3(0, 5, 12)
+current = true
+script = ExtResource("3_chase")
+
+[node name="HUD" parent="." instance=ExtResource("5_hud")]
