@@ -23,40 +23,28 @@ signal critical_damage(component: String)
 var maximum_damage := 100.0
 
 
-func apply_damage(component: String, amount: float):
+func apply_damage(component: String, amount: float) -> void:
     if amount <= 0.0:
         return
 
-    match component.to_lower():
+    var key := component.to_lower()
+
+    match key:
         "engine":
-            engine_damage = clampf(
-                engine_damage + amount, 0.0, maximum_damage
-            )
-
+            engine_damage = clampf(engine_damage + amount, 0.0, maximum_damage)
         "body":
-            body_damage = clampf(
-                body_damage + amount, 0.0, maximum_damage
-            )
-
+            body_damage = clampf(body_damage + amount, 0.0, maximum_damage)
         "wheel":
-            wheel_damage = clampf(
-                wheel_damage + amount, 0.0, maximum_damage
-            )
-
+            wheel_damage = clampf(wheel_damage + amount, 0.0, maximum_damage)
         _:
             return
 
-    damage_changed.emit(
-        component,
-        get_component_damage(component)
-    )
+    damage_changed.emit(key, get_component_damage(key))
 
-    if get_component_damage(component) >= 80.0:
-        critical_damage.emit(component)
+    if get_component_damage(key) >= 80.0:
+        critical_damage.emit(key)
 
-    vehicle_condition_changed.emit(
-        get_vehicle_condition()
-    )
+    vehicle_condition_changed.emit(get_vehicle_condition())
 
 
 func get_component_damage(component: String) -> float:
@@ -67,15 +55,11 @@ func get_component_damage(component: String) -> float:
             return body_damage
         "wheel":
             return wheel_damage
-
     return 0.0
 
 
 func get_vehicle_condition() -> float:
-    var total_damage := (
-        engine_damage + body_damage + wheel_damage
-    ) / 3.0
-
+    var total_damage := (engine_damage + body_damage + wheel_damage) / 3.0
     return 100.0 - total_damage
 
 
@@ -87,12 +71,18 @@ func get_repair_cost(component: String) -> float:
             return body_damage * body_repair_price
         "wheel":
             return wheel_damage * wheel_repair_price
-
+        "all":
+            return (
+                get_repair_cost("engine")
+                + get_repair_cost("body")
+                + get_repair_cost("wheel")
+            )
     return 0.0
 
 
 func repair_component(component: String) -> bool:
-    var cost := get_repair_cost(component)
+    var key := component.to_lower()
+    var cost := get_repair_cost(key)
 
     if cost <= 0.0:
         return false
@@ -103,10 +93,10 @@ func repair_component(component: String) -> bool:
     if not wallet.has_method("spend_money"):
         return false
 
-    if not wallet.spend_money(cost, "Truck Repair: " + component):
+    if not wallet.spend_money(cost, "Truck Repair: " + key):
         return false
 
-    match component.to_lower():
+    match key:
         "engine":
             engine_damage = 0.0
         "body":
@@ -116,7 +106,7 @@ func repair_component(component: String) -> bool:
         _:
             return false
 
-    damage_changed.emit(component, 0.0)
+    damage_changed.emit(key, 0.0)
     vehicle_condition_changed.emit(get_vehicle_condition())
     repair_completed.emit(cost)
 
@@ -124,19 +114,18 @@ func repair_component(component: String) -> bool:
 
 
 func repair_all() -> bool:
-    var total_cost := (
-        get_repair_cost("engine")
-        + get_repair_cost("body")
-        + get_repair_cost("wheel")
-    )
+    var cost := get_repair_cost("all")
 
-    if total_cost <= 0.0:
+    if cost <= 0.0:
         return false
 
     if not is_instance_valid(wallet):
         return false
 
-    if not wallet.spend_money(total_cost, "Complete Truck Repair"):
+    if not wallet.has_method("spend_money"):
+        return false
+
+    if not wallet.spend_money(cost, "Complete Truck Repair"):
         return false
 
     engine_damage = 0.0
@@ -147,15 +136,7 @@ func repair_all() -> bool:
     damage_changed.emit("body", 0.0)
     damage_changed.emit("wheel", 0.0)
 
-    vehicle_condition_changed.emit(100.0)
-    repair_completed.emit(total_cost)
+    vehicle_condition_changed.emit(get_vehicle_condition())
+    repair_completed.emit(cost)
 
     return true
-
-
-func reset_damage():
-    engine_damage = 0.0
-    body_damage = 0.0
-    wheel_damage = 0.0
-
-    vehicle_condition_changed.emit(100.0)
