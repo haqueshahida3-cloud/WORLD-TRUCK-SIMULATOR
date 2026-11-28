@@ -18,20 +18,21 @@ var truck_nearby := false
 var repairing := false
 var repair_timer := 0.0
 var pending_cost := 0.0
+var selected_component := "all"
 
 
-func _ready():
+func _ready() -> void:
     body_entered.connect(_on_body_entered)
     body_exited.connect(_on_body_exited)
 
 
-func _on_body_entered(body: Node3D):
+func _on_body_entered(body: Node3D) -> void:
     if body is VehicleBody3D:
         truck_nearby = true
         garage_entered.emit()
 
 
-func _on_body_exited(body: Node3D):
+func _on_body_exited(body: Node3D) -> void:
     if body is VehicleBody3D:
         truck_nearby = false
         garage_exited.emit()
@@ -40,7 +41,7 @@ func _on_body_exited(body: Node3D):
             cancel_repair()
 
 
-func _process(delta):
+func _process(delta: float) -> void:
     if not repairing:
         return
 
@@ -62,27 +63,31 @@ func start_repair(component: String = "all") -> bool:
         repair_failed.emit("Damage system missing")
         return false
 
-    if component == "all":
-        pending_cost = (
-            damage_system.get_repair_cost("engine")
-            + damage_system.get_repair_cost("body")
-            + damage_system.get_repair_cost("wheel")
-        )
-    else:
-        pending_cost = damage_system.get_repair_cost(component)
+    if not is_instance_valid(wallet):
+        repair_failed.emit("Wallet missing")
+        return false
+
+    var key := component.to_lower()
+
+    if key not in ["engine", "body", "wheel", "all"]:
+        repair_failed.emit("Invalid repair component")
+        return false
+
+    pending_cost = damage_system.get_repair_cost(key)
 
     if pending_cost <= 0.0:
         repair_failed.emit("No repair needed")
         return false
 
-    if not is_instance_valid(wallet):
-        repair_failed.emit("Wallet missing")
+    if not wallet.has_method("get_balance"):
+        repair_failed.emit("Wallet balance method missing")
         return false
 
     if wallet.get_balance() < pending_cost:
         repair_failed.emit("Not enough money")
         return false
 
+    selected_component = key
     repairing = true
     repair_timer = 0.0
     repair_started.emit()
@@ -90,41 +95,45 @@ func start_repair(component: String = "all") -> bool:
     return true
 
 
-func finish_repair():
+func finish_repair() -> void:
     if not repairing:
         return
 
     var success := false
 
-    if damage_system.has_method("repair_all"):
-        success = damage_system.repair_all()
+    if selected_component == "all":
+        if damage_system.has_method("repair_all"):
+            success = damage_system.repair_all()
+    else:
+        if damage_system.has_method("repair_component"):
+            success = damage_system.repair_component(selected_component)
+
+    repairing = false
 
     if success:
-        repairing = false
         repair_finished.emit(pending_cost)
     else:
-        repairing = false
-        repair_failed.emit("Repair payment failed")
+        repair_failed.emit("Repair failed or payment unsuccessful")
 
-    pending_cost = 0.0
-    repair_timer = 0.0
+    _reset_repair()
 
 
-func cancel_repair():
+func cancel_repair() -> void:
     repairing = false
+    _reset_repair()
+
+
+func _reset_repair() -> void:
     pending_cost = 0.0
     repair_timer = 0.0
+    selected_component = "all"
 
 
 func get_repair_progress() -> float:
     if not repairing or service_time <= 0.0:
         return 0.0
 
-    return clampf(
-        repair_timer / service_time,
-        0.0,
-        1.0
-    )
+    return clampf(repair_timer / service_time, 0.0, 1.0)
 
 
 func is_truck_nearby() -> bool:
